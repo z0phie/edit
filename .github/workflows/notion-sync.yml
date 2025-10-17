@@ -1,0 +1,46 @@
+name: Sync to Notion
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync-to-notion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # Get list of changed files
+      - name: Get changed markdown files
+        id: changed_files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: "**/*.md"
+
+      # Loop over changed files and sync them
+      - name: Sync files to Notion
+        if: steps.changed_files.outputs.any_changed == 'true'
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        run: |
+          for file in ${{ steps.changed_files.outputs.all_changed_files }}; do
+            echo "Syncing $file to Notion..."
+
+            # Use npx to run the md-to-notion package without installing it
+            # This command does:
+            # 1. Finds a page in Notion where 'GitHub Path' matches the $file
+            # 2. If it finds one, it updates it.
+            # 3. If it doesn't, it creates a new page.
+            # 4. It sets the 'Name' (title) and the 'GitHub Path'
+
+            npx md-to-notion \
+              --notion-api-key "$NOTION_API_KEY" \
+              --notion-database-id "$NOTION_DATABASE_ID" \
+              --md-file-path "$file" \
+              --id-property "GitHub Path" \
+              --id-value "$file" \
+              --name-property "Name"
+          done
