@@ -1,0 +1,34 @@
+name: 1-Click Force Sync to Notion
+
+on:
+  workflow_dispatch: # This adds the "Run workflow" button
+
+jobs:
+  force-sync-to-notion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Force Sync ALL Files to Notion
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        run: |
+          # This is the "dirty" part:
+          # We find ALL .md files and loop over them,
+          # instead of just checking for "changed" ones.
+
+          find . -type f -name "*.md" ! -path "./.github/*" | while read file; do
+            echo "Syncing $file to Notion..."
+
+            # npx will create a new page or update an existing one
+            # based on the "GitHub Path" property.
+            npx md-to-notion \
+              --notion-api-key "$NOTION_API_KEY" \
+              --notion-database-id "$NOTION_DATABASE_ID" \
+              --md-file-path "$file" \
+              --id-property "GitHub Path" \
+              --id-value "$file" \
+              --name-property "Name"
+          done
