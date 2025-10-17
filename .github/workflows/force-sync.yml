@@ -4,31 +4,26 @@ on:
   workflow_dispatch: # This adds the "Run workflow" button
 
 jobs:
-  force-sync-to-notion:
+  force-sync:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Check out all the files in your repo
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Force Sync ALL Files to Notion
-        env:
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-        run: |
-          # This is the "dirty" part:
-          # We find ALL .md files and loop over them,
-          # instead of just checking for "changed" ones.
+      # Step 2: Use the action you found to sync them
+      - name: Push Markdown to Notion
+        uses: JoshStern/push-md-to-notion@v0.3.0
+        with:
+          # This pulls the API key from your GitHub Secrets
+          notion-api-key: ${{ secrets.NOTION_API_KEY }}
 
-          find . -type f -name "*.md" ! -path "./.github/*" | while read file; do
-            echo "Syncing $file to Notion..."
+          # This pulls the Database ID from your GitHub Secrets
+          notion-database-id: ${{ secrets.NOTION_DATABASE_ID }}
 
-            # npx will create a new page or update an existing one
-            # based on the "GitHub Path" property.
-            npx md-to-notion \
-              --notion-api-key "$NOTION_API_KEY" \
-              --notion-database-id "$NOTION_DATABASE_ID" \
-              --md-file-path "$file" \
-              --id-property "GitHub Path" \
-              --id-value "$file" \
-              --name-property "Name"
-          done
+          # This tells the action to scan the ENTIRE repository for .md files
+          md-file-path: "."
+
+          # This is the name of the "Text" column in your Notion DB 
+          # that stores the unique file path (e.g., "README.md")
+          notion-page-id-property: "GitHub Path"
