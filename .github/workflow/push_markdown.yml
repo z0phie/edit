@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+      - [span_0](start_span)main # This workflow runs for every push to main[span_0](end_span)
+jobs:
+  push_markdown_job:
+    runs-on: ubuntu-latest
+    name: Push Markdown to Notion
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # [span_1](start_span)Crucial for the diff check to work correctly[span_1](end_span)
+          fetch-depth: 2 
+      - name: Push Markdown to Notion
+        uses: JoshStern/push-md-to-notion@v0.3.0
+        id: push_markdown
+        with:
+          # References the secret created in Step 2
+          notion-token: ${{ secrets.NOTION_TOKEN }}
